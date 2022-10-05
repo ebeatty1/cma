@@ -44,6 +44,7 @@ sub new
     my $first_tier;
     my $second_tier;
     my $third_tier;
+    my $fourth_tier;
 
     my $self = bless {
         type => $type,                                      # 0  
@@ -53,7 +54,7 @@ sub new
         cytoband => $cytoband,                              # 4
         genes => \@genes,                                   # 5
         gene_count => $gene_count,                          # 6
-        size => $size,                                      # 7
+        size => $size,                                      # 7     # Shown in kb
         event => $event,                                    # 8
         probe_count => $probe_count,                        # 9
         classification => $classification,                  # 10
@@ -80,7 +81,8 @@ sub new
         notes => $notes,                                    # 31    # Nexus exclusive metric
         first_tier => $first_tier,                          # 32    # Filter flag
         second_tier => $second_tier,                        # 33    # Filter flag
-        third_tier => $third_tier                           # 34    # Filter flag
+        third_tier => $third_tier,                          # 34    # Filter flag
+        fourth_tier => $fourth_tier                         # 35    # Filter flag
     }, $class;
 
     return $self;
@@ -229,7 +231,7 @@ sub process_aberration
 
             elsif ($header eq 'Length')
             {
-                $self->{size} = $aberration[$pos];
+                $self->{size} = ($aberration[$pos] / 1000);
             }
 
             elsif ($header eq 'Event')
@@ -355,6 +357,12 @@ sub set_third_tier
 {
     my $self = shift;
     $self->{third_tier} = 1;
+}
+
+sub set_fourth_tier
+{
+    my $self = shift;
+    $self->{fourth_tier} = 1;
 }
 
 1;

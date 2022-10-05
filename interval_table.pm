@@ -11,12 +11,18 @@ sub new
     my $header;
     my @raw_aberrations;
     my @aberrations;
+    my @first_tier;
+    my @second_tier;
+    my @third_tier;
 
     my $self = bless {
         type => $type,                                      # 0     # Interval table type  
         header => $header,                                  # 1     # Reference to a header object
         raw_aberrations => \@raw_aberrations,               # 2     # Reference to an array containing unprocessed aberrations
-        aberrations => \@aberrations                        # 3     # Reference to an array containing references to aberration objects
+        aberrations => \@aberrations,                       # 3     # Reference to an array containing references to aberration objects
+        first_tier => \@first_tier,                         # 4     # Reference to an array containing references to aberrations flagged as being tier-1
+        second_tier => \@second_tier,                       # 5     # Reference to an array containing references to aberrations flagged as being tier-2
+        third_tier => \@third_tier                          # 6     # Reference to an array containing references to aberrations flagged as being tier-3
     }, $class;
 
     return $self;
@@ -176,20 +182,107 @@ sub filter_aberrations
 {
     my $self = shift;
     my $first_tier_genes = shift;
+    my $second_tier_genes = shift;
 
+    # tier 1 and tier 2 flagging
     foreach my $aberration (@{$self->{aberrations}})
     {
         foreach my $gene (@{$aberration->{genes}})
         {
-            if ( grep( /^$gene$/, @{$first_tier_genes->{genes}} ) ) 
-            {
-                print "First-tier gene $gene found in ".$aberration->{chromosome}." ".$aberration->{cytoband}." aberration!\n";
-                $aberration->set_first_tier();
-            }
+            # tier 1 flagging
+            if ( grep( /^$gene$/, @{$first_tier_genes->{genes}} ) ) { $aberration->set_first_tier(); }
+
+            # tier 2 flagging
+            if ( grep( /^$gene$/, @{$second_tier_genes->{genes}} ) ) { $aberration->set_second_tier(); }
         }
+
+        # tier 3 flagging
+        if ($aberration->{size} >= 1000 && $aberration->{type} ne 'LOH') { $aberration->set_third_tier(); }
+
+        # tier 4 flagging
+        if ($aberration->{size} >= 5000 && $aberration->{type} eq 'LOH') { $aberration->set_fourth_tier(); }
     }
 
+    foreach my $aberration (@{$self->{aberrations}})
+    {
+        if ($aberration->{first_tier}) { $self->add_first_tier_aberration($aberration); }
+
+        elsif ($aberration->{second_tier}) { $self->add_second_tier_aberration($aberration); }
+
+        elsif ($aberration->{third_tier}) { $self->add_third_tier_aberration($aberration); }
+
+        elsif ($aberration->{fourth_tier}) { $self->add_fourth_tier_aberration($aberration); }
+    }
+
+    $self->print_filtered();
+
     print "Aberrations filtered!\n";
+}
+
+sub add_first_tier_aberration
+{
+    my $self = shift;
+    my $aberration = shift;
+    push(@{$self->{first_tier}}, $aberration);
+}
+
+sub add_second_tier_aberration
+{
+    my $self = shift;
+    my $aberration = shift;
+    push(@{$self->{second_tier}}, $aberration);
+}
+
+sub add_third_tier_aberration
+{
+    my $self = shift;
+    my $aberration = shift;
+    push(@{$self->{third_tier}}, $aberration);
+}
+
+sub print_filtered
+{
+    my $self = shift;
+
+    print "\nFirst-tier aberrations: CHD gene\n";
+    print "----------------------------------\n";
+    foreach my $aberration (@{$self->{first_tier}})
+    {
+        print $aberration->{event}."\t".$aberration->{chromosome}."\t".$aberration->{cytoband}."\t".$aberration->{size}."\t";
+        # foreach my $gene (@{$aberration->{genes}}) { print $gene.","; }
+        print "\n";
+    }
+    print "\n";
+
+    print "Second-tier aberrations: CVD gene\n";
+    print "---------------------------------\n";
+    foreach my $aberration (@{$self->{second_tier}})
+    {
+        print $aberration->{event}."\t".$aberration->{chromosome}."\t".$aberration->{cytoband}."\t".$aberration->{size}."\t";
+        # foreach my $gene (@{$aberration->{genes}}) { print $gene.","; }
+        print "\n";
+    }
+    print "\n";
+
+    print "Third-tier aberrations: Size > 1 MB and not LOH\n";
+    print "-----------------------------------------------\n";
+    foreach my $aberration (@{$self->{third_tier}})
+    {
+        print $aberration->{event}."\t".$aberration->{chromosome}."\t".$aberration->{cytoband}."\t".$aberration->{size}."\t";
+        # foreach my $gene (@{$aberration->{genes}}) { print $gene.","; }
+        print "\n";
+    }
+    print "\n";
+
+    print "Fourth-tier aberrations: Size > 5 MB and LOH\n";
+    print "--------------------------------------------\n";
+    foreach my $aberration (@{$self->{fourth_tier}})
+    {
+        print $aberration->{event}."\t".$aberration->{chromosome}."\t".$aberration->{cytoband}."\t".$aberration->{size}."\t";
+        # foreach my $gene (@{$aberration->{genes}}) { print $gene.","; }
+        print "\n";
+    }
+    print "\n";
 }
 
 1;
