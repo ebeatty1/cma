@@ -14,7 +14,7 @@ sub new
     return $self;
 }
 
-# expects a file handle to an Agilent or Nexus interval table file
+# expects a file handle to a plaintext list of genes
 sub process_gene_list
 {
     my $self = shift;
@@ -27,19 +27,33 @@ sub process_gene_list
     {    
         chomp($line);
         
-        if ($line =~ m/^\S/)
-        {
-            push(@{$self->{genes}}, $line);
-        }
+        if ($line =~ m/^\S/) { $self->add_gene($line); }
     }
-
-    print "First-tier gene list has ".$self->get_gene_count()." genes.\n";
 }
+
+# getters
+
+sub get_genes
+{
+    my $self = shift;
+    return $self->{genes};
+}
+
+# setters
+
+sub add_gene
+{
+    my $self = shift;
+    my $gene = shift;
+    push(@{$self->{genes}}, $gene);
+}
+
+# other
 
 sub get_gene_count
 {
     my $self = shift;
-    return scalar(@{$self->{genes}});
+    return scalar(@{$self->get_genes()});
 }
 
 1;

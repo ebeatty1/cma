@@ -27,7 +27,7 @@ sub new
     return $self;
 }
 
-# expects a file handle to an Agilent or Nexus interval table file
+# expects a reference to an array containing the header, split by line
 sub process_header
 {
     my $self = shift;
@@ -39,7 +39,7 @@ sub process_header
 
     foreach my $line (@$header)
     {
-        if ($self->{type} eq 'Agilent')
+        if ($self->get_type() eq 'Agilent')
         {
             if ($line =~ m/^Genome\t(.*)$/)
             {
@@ -48,7 +48,7 @@ sub process_header
 
             elsif ($line =~ m/^Record Name\t(.*)$/)
             {
-                $self->{title} = $1;
+                $self->set_title($1);
             }
 
             elsif ($line =~ m/^Creation Date\t(.*)$/)
@@ -58,7 +58,7 @@ sub process_header
             
             elsif ($header_pos = ($header_length - 1))
             {
-                $self->set_column_header($line);
+                $self->set_column_headers($line);
             }
 
             else
@@ -67,7 +67,7 @@ sub process_header
             }
         }
 
-        elsif ($self->{type} eq 'Nexus')
+        elsif ($self->get_type() eq 'Nexus')
         {
             if ($line =~ m/^\#Build\s\=\s(.*)$/)
             {
@@ -76,12 +76,12 @@ sub process_header
 
             elsif ($line =~ m/^\#Sample\s\=\s(.*)$/)
             {
-                $self->{title} = ($1);
+                $self->set_title($1);
             }
 
             elsif ($header_pos = ($header_length - 1))
             {
-                $self->set_column_header($line);
+                $self->set_column_headers($line);
             }
             
             else
@@ -96,10 +96,57 @@ sub process_header
     }
 }
 
+# getters
+
+sub get_type
+{
+    my $self = shift;
+    return $self->{type};
+}
+
 sub get_genome_build
 {
     my $self = shift;
     return $self->{genome_build};
+}
+
+sub get_title
+{
+    my $self = shift;
+    return $self->{title};
+}
+
+sub get_scan_date
+{
+    my $self = shift;
+    return $self->{scan_date};
+}
+
+sub get_column_headers
+{
+    my $self = shift;
+    return $self->{column_headers};
+}
+
+sub get_extra_info
+{
+    my $self = shift;
+    return $self->{extra_info};
+}
+
+sub get_complete_header
+{
+    my $self = shift;
+    return $self->{complete_header};
+}
+
+# setters
+
+sub set_type
+{
+    my $self = shift;
+    my $type = shift;
+    $self->{type} = $type;
 }
 
 sub set_genome_build
@@ -109,10 +156,11 @@ sub set_genome_build
     $self->{genome_build} = $genome_build;
 }
 
-sub get_scan_date
+sub set_title
 {
     my $self = shift;
-    return $self->{scan_date};
+    my $title = shift;
+    $self->{title} = $title;
 }
 
 sub set_scan_date
@@ -122,28 +170,12 @@ sub set_scan_date
     $self->{scan_date} = $scan_date;
 }
 
-sub set_column_header
+sub set_column_headers
 {
     my $self = shift;
     my $column_header = shift;
     my @column_headers = split(/\t/, $column_header, -1);
     $self->{column_headers} = \@column_headers;
-}
-
-sub get_column_headers
-{
-    my $self = shift;
-    return $self->{column_headers};
-}
-
-sub print_column_headers
-{
-    my $self = shift;
-    foreach my $column_header (@{$self->{column_headers}})
-    {
-        print "$column_header\t";
-    }
-    print "\n";
 }
 
 sub add_extra_info
@@ -153,15 +185,6 @@ sub add_extra_info
     push(@{$self->{extra_info}}, $extra_info);
 }
 
-sub print_extra_info
-{
-    my $self = shift;
-    foreach my $extra_info (@{$self->{extra_info}})
-    {
-        print "$extra_info\n";
-    }
-}
-
 sub set_complete_header
 {
     my $self = shift;
@@ -169,10 +192,31 @@ sub set_complete_header
     $self->{complete_header} = $complete_header;
 }
 
+# other
+
+sub print_column_headers
+{
+    my $self = shift;
+    foreach my $column_header (@{$self->get_column_headers()})
+    {
+        print "$column_header\t";
+    }
+    print "\n";
+}
+
+sub print_extra_info
+{
+    my $self = shift;
+    foreach my $extra_info (@{$self->get_extra_info()})
+    {
+        print "$extra_info\n";
+    }
+}
+
 sub print_complete_header
 {
     my $self = shift;
-    foreach my $line (@{$self->{complete_header}})
+    foreach my $line (@{$self->get_complete_header()})
     {
         print "$line\n";
     }
