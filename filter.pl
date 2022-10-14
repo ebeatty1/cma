@@ -36,12 +36,12 @@ END_USAGE
 
 # getopt vars
 my $help;
-my $inputFile = './unfiltered.txt';
-my $outputFile = './filtered.txt';
-my $gene_list_a = './gene_list_primary.tsv';
-my $gene_list_b = './gene_list_secondary.tsv';
-my $cytoband_table = './cytoband_hg19.txt';
-my $cn_variant_table = './known_variants.tsv';
+my $inputFile = './data/unfiltered.txt';
+my $outputFile = './data/filtered.txt';
+my $gene_list_a = './data/gene_list_primary.tsv';
+my $gene_list_b = './data/gene_list_secondary.tsv';
+my $cytoband_table = './data/cytoband_hg19.txt';
+my $cn_variant_table = './data/known_variants.tsv';
 
 GetOptions(
 	'h|help' =>             \$help,
