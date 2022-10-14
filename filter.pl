@@ -61,14 +61,6 @@ my $cn_variants;
 my $primary_genes;
 my $secondary_genes;
 
-# read interval table
-{
-    open my $tableIn, "<", "$inputFile" or die "Can't open interval table file:\t$inputFile\n";
-    $interval_table = interval_table->new();
-    $interval_table->process_table($tableIn);
-    close $tableIn;
-}
-
 # read cytoband table
 {
     open my $tableIn, "<", "$cytoband_table" or die "Can't open cytoband table file:\t$cytoband_table\n";
@@ -82,6 +74,14 @@ my $secondary_genes;
     open my $tableIn, "<", "$cn_variant_table" or die "Can't open known copy number variant table file:\t$cn_variant_table\n";
     $cn_variants = cn_variant_table->new();
     $cn_variants->process_cn_variant_table($tableIn, $cytomap);
+    close $tableIn;
+}
+
+# read interval table
+{
+    open my $tableIn, "<", "$inputFile" or die "Can't open interval table file:\t$inputFile\n";
+    $interval_table = interval_table->new();
+    $interval_table->process_table($tableIn, $cytomap);
     close $tableIn;
 }
 
@@ -108,4 +108,4 @@ my $secondary_genes;
 $interval_table->filter_aberrations($primary_genes, $secondary_genes);
 $interval_table->print_filtered();
 
-# $cytomap->print_cytobands();
+$cytomap->print_cytobands();

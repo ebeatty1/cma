@@ -38,7 +38,7 @@ sub process_cn_variant_table
         elsif (!($line =~ m/^chr/)) { die "Unrecognized copy number variant table format detected.\n"; }
         else 
         {   
-            my $variant = cn_variant->new($line);
+            my $variant = cn_variant->new($line, $cytomap);
             $self->add_known_variant($variant);
         }
     }
@@ -47,11 +47,15 @@ sub process_cn_variant_table
     foreach my $variant (@{$self->get_known_variants()})
     {
         my $chromosome = $cytomap->{$variant->get_chromosome()};
-        my $cytoband = $chromosome->get_cytoband_by_id($variant->get_cytoband());
 
-        if ($cytoband != -1)
+        foreach my $cytoband_id (@{$variant->get_cytobands()})
         {
-            $cytoband->add_classification($variant->get_event()." : ".$variant->get_syndrome_name());
+            my $cytoband = $chromosome->get_cytoband_by_id($cytoband_id);
+
+            if ($cytoband != -1)
+            {
+                $cytoband->add_classification($variant->get_event()." : ".$variant->get_syndrome_name());
+            }
         }
     }
 }

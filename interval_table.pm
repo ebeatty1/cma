@@ -37,6 +37,7 @@ sub process_table
 {
     my $self = shift;
     my $tableHandle = shift;
+    my $cytomap = shift;
 
     die "File handle expected but not received.\n" unless $tableHandle;
     die "Valid file handle expected but not received.\n" unless fileno($tableHandle) != -1;
@@ -108,7 +109,7 @@ sub process_table
     $header->process_header(\@header);
     $self->set_header($header);
 
-    $self->process_aberrations();
+    $self->process_aberrations($cytomap);
 }
 
 # getters
@@ -237,10 +238,12 @@ sub add_unflagged_aberration
 sub process_aberrations
 {
     my $self = shift;
+    my $cytomap = shift; 
+
     foreach my $raw_aberration (@{$self->get_raw_aberrations()})
     {
         my $aberration = aberration->new($self->get_type());
-        $aberration->process_aberration($raw_aberration, $self->get_header());
+        $aberration->process_aberration($raw_aberration, $self->get_header(), $cytomap);
         $self->add_aberration($aberration);
     }
 }
@@ -294,7 +297,9 @@ sub print_filtered
     print "--------------------------------\n";
     foreach my $aberration (@{$self->get_first_tier()})
     {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t".$aberration->get_cytoband()."\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
+        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
+        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
+        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
         print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
         foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
         print "\n";
@@ -305,7 +310,9 @@ sub print_filtered
     print "---------------------------------\n";
     foreach my $aberration (@{$self->get_second_tier()})
     {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t".$aberration->get_cytoband()."\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
+        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
+        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
+        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
         print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
         foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
         print "\n";
@@ -316,7 +323,9 @@ sub print_filtered
     print "-----------------------------------------------\n";
     foreach my $aberration (@{$self->get_third_tier()})
     {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t".$aberration->get_cytoband()."\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
+        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
+        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
+        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
         print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
         foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
         print "\n";
@@ -327,7 +336,9 @@ sub print_filtered
     print "--------------------------------------------\n";
     foreach my $aberration (@{$self->get_fourth_tier()})
     {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t".$aberration->get_cytoband()."\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
+        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
+        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
+        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
         print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
         foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
         print "\n";
@@ -338,7 +349,9 @@ sub print_filtered
     print "---------------------\n";
     foreach my $aberration (@{$self->get_unflagged()})
     {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t".$aberration->get_cytoband()."\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
+        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
+        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
+        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
         print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
         foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
         print "\n";

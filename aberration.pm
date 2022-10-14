@@ -1,4 +1,5 @@
 use warnings; use strict;
+use cytomap;
 
 package aberration;
 
@@ -10,7 +11,7 @@ sub new
     my $chromosome;
     my $start;
     my $stop;
-    my $cytoband;
+    my @cytobands;
     my @genes;
     my $size;
     my $event;
@@ -52,7 +53,7 @@ sub new
         chromosome => $chromosome,                          # 1
         start => $start,                                    # 2
         stop => $stop,                                      # 3
-        cytoband => $cytoband,                              # 4
+        cytobands => \@cytobands,                           # 4
         genes => \@genes,                                   # 5
         gene_count => $gene_count,                          # 6
         size => $size,                                      # 7     # Shown in kb
@@ -95,6 +96,8 @@ sub process_aberration
     my $self = shift;
     my $raw = shift;
     my $header = shift;
+	my $cytomap = shift;
+
     my @aberration = split("\t", $raw, -1);
     my @column_headers = @{$header->get_column_headers()};
 
@@ -110,7 +113,15 @@ sub process_aberration
             if ($header eq 'Chromosome') { $self->set_chromosome($aberration[$pos]); } 
             elsif ($header eq 'Start') { $self->set_start($aberration[$pos]); }
             elsif ($header eq 'Stop') { $self->set_stop($aberration[$pos]);   }
-            elsif ($header eq 'Cytoband') { $self->set_cytoband($aberration[$pos]); }
+            elsif ($header eq 'Cytoband') 
+			{ 
+				if (defined($self->get_chromosome()))
+				{
+					my $cytobands = $cytomap->get_cytoband_range($self->get_chromosome(), $aberration[$pos]);
+					$self->set_cytobands($cytobands); 
+				}
+				else { die "Chromosome column must be ordered before the cytoband column\n"; }
+			}
             elsif ($header eq 'Gene Name')
             {
                 my @genes = split(/\,/, $aberration[$pos], -1);
@@ -153,7 +164,15 @@ sub process_aberration
 				$self->set_start($start);
 				$self->set_stop($stop);
             }
-            elsif ($header eq 'Cytoband') { $self->set_cytoband($aberration[$pos]); }
+            elsif ($header eq 'Cytoband') 
+			{ 
+				if (defined($self->get_chromosome()))
+				{
+					my $cytobands = $cytomap->get_cytoband_range($self->get_chromosome(), $aberration[$pos]);
+					$self->set_cytobands($cytobands); 
+				}
+				else { die "Chromosome column must be ordered before the cytoband column\n"; }
+			}
             elsif ($header eq 'Gene Symbols')
             {
                 my @genes = split(/\,\ /, $aberration[$pos], -1);
@@ -215,10 +234,10 @@ sub get_stop
 	return $self->{stop};
 }
 
-sub get_cytoband
+sub get_cytobands
 {
 	my $self = shift;
-	return $self->{cytoband};
+	return $self->{cytobands};
 }
 
 sub get_genes
@@ -443,11 +462,11 @@ sub set_stop
 	$self->{stop} = $stop;
 }
 
-sub set_cytoband
+sub set_cytobands
 {
 	my $self = shift;
-	my $cytoband = shift;
-	$self->{cytoband} = $cytoband;
+	my $cytobands = shift;
+	$self->{cytobands} = $cytobands;
 }
 
 sub set_genes

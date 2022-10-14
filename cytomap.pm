@@ -299,4 +299,31 @@ sub get_cytoband_count
     return $count;
 }
 
+sub get_cytoband_range
+{
+    my $self = shift;
+    my $chr = shift;
+    my $range_raw = shift;
+
+    my $first;
+    my $last;
+
+    my @cytobands = ();
+    
+    if ($range_raw =~ m/^([pq].+?)\s{0,1}-\s{0,1}([pq].+?)$/) 
+    {
+        $first = $1;
+        $last = $2;
+
+        @cytobands = @{$self->{$chr}->get_cytoband_list_from_range($first, $last)};
+    }
+
+    else 
+    { 
+        push (@cytobands, $range_raw);
+    }
+
+    return \@cytobands; 
+}
+
 1;

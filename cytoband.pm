@@ -74,7 +74,7 @@ sub add_classification
     my $classification = shift;
 
     # add classification to the classification array if not already present
-    if ( !( grep( /^$classification$/, @{$self->get_classifications()} ) ) ) { push(@{$self->get_classifications()}, $classification);  }
+    if ( !( grep( /^$classification$/, @{$self->get_classifications()} ) ) ) { push(@{$self->get_classifications()}, $classification); }
 }
 
 # other
