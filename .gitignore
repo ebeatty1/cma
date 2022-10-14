@@ -1,0 +1,12 @@
+data/AgilentExOutput.tsv
+data/CMA-34_Val-13.txt
+data/CMA-35_Val-13.txt
+data/cytoband_hg19_full.txt
+data/cytoband_hg19.txt
+data/ExampleUnfiltered.txt
+data/ExampleUnfilteredNexus.txt
+data/gene_list_primary.tsv
+data/gene_list_secondary.tsv
+data/known_variants.tsv
+data/NexusExOutput.tsv
+data/testout.tsv
