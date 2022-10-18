@@ -30,7 +30,8 @@ OPTIONS:
  -c (--cytoband-table) FILE Tells the script which cytoband table file to use.
                             Optional. Looks for a file at ./cytoband_hg19.txt by default.
  -v (--variant-table) FILE  Tells the script which copy number variant table file to use.
-                            Optional. Looks for a file at ./known_variants.tsv by default.                            
+                            Optional. Looks for a file at ./known_variants.tsv by default.         
+ -f (--print-full)                             
 
 END_USAGE
 
@@ -42,6 +43,7 @@ my $gene_list_a = './data/gene_list_primary.tsv';
 my $gene_list_b = './data/gene_list_secondary.tsv';
 my $cytoband_table = './data/cytoband_hg19.txt';
 my $cn_variant_table = './data/known_variants.tsv';
+my $print_full;
 
 GetOptions(
 	'h|help' =>             \$help,
@@ -50,7 +52,8 @@ GetOptions(
     'a|gene-list-a=s' =>    \$gene_list_a,
     'b|gene-list-b=s' =>    \$gene_list_b,
     'c|cytoband-table=s' => \$cytoband_table,
-    'v|variant-table=s' =>  \$cn_variant_table
+    'v|variant-table=s' =>  \$cn_variant_table,
+    'f|print-full' =>       \$print_full
 );
 
 die $usage if $help;
@@ -63,7 +66,7 @@ my $secondary_genes;
 
 # read cytoband table
 {
-    open my $tableIn, "<", "$cytoband_table" or die "Can't open cytoband table file:\t$cytoband_table\n";
+    open my $tableIn, "<", "$cytoband_table" or die $usage."Can't open cytoband table file:\t$cytoband_table\n\n";
     $cytomap = cytomap->new();
     $cytomap->process_cytoband_table($tableIn);
     close $tableIn;
@@ -71,7 +74,7 @@ my $secondary_genes;
 
 # read known copy number variant table
 {
-    open my $tableIn, "<", "$cn_variant_table" or die "Can't open known copy number variant table file:\t$cn_variant_table\n";
+    open my $tableIn, "<", "$cn_variant_table" or die $usage."Can't open known copy number variant table file:\t$cn_variant_table\n\n";
     $cn_variants = cn_variant_table->new();
     $cn_variants->process_cn_variant_table($tableIn, $cytomap);
     close $tableIn;
@@ -79,7 +82,7 @@ my $secondary_genes;
 
 # read interval table
 {
-    open my $tableIn, "<", "$inputFile" or die "Can't open interval table file:\t$inputFile\n";
+    open my $tableIn, "<", "$inputFile" or die $usage."Can't open interval table file:\t$inputFile\n\n";
     $interval_table = interval_table->new();
     $interval_table->process_table($tableIn, $cytomap);
     close $tableIn;
@@ -87,7 +90,7 @@ my $secondary_genes;
 
 # read primary gene list
 {
-    open my $geneListIn, "<", "$gene_list_a" or die "Can't open primary gene list file:\t$gene_list_a\n";
+    open my $geneListIn, "<", "$gene_list_a" or die $usage."Can't open primary gene list file:\t$gene_list_a\n\n";
     $primary_genes = gene_list->new();
     $primary_genes->process_gene_list($geneListIn);
     close $geneListIn;
@@ -95,7 +98,7 @@ my $secondary_genes;
 
 # read secondary gene list
 {
-    open my $geneListIn, "<", "$gene_list_b" or die "Can't open secondary gene list file:\t$gene_list_b\n";
+    open my $geneListIn, "<", "$gene_list_b" or die $usage."Can't open secondary gene list file:\t$gene_list_b\n\n";
     $secondary_genes = gene_list->new();
     $secondary_genes->process_gene_list($geneListIn);
     close $geneListIn;
@@ -106,6 +109,6 @@ my $secondary_genes;
 # print "Cytomap has ".$cytomap->get_cytoband_count()." unique bands.\n";
 
 $interval_table->filter_aberrations($primary_genes, $secondary_genes);
-$interval_table->print_filtered();
+$interval_table->print_filtered($print_full);
 
-$cytomap->print_cytobands();
+# $cytomap->print_cytobands();

@@ -259,10 +259,18 @@ sub filter_aberrations
         foreach my $gene (@{$aberration->get_genes()})
         {
             # tier 1 flagging
-            if ( grep( /^$gene$/, @{$first_tier_genes->get_genes()} ) ) { $aberration->set_first_tier(); }
+            if ( grep( /^$gene$/, @{$first_tier_genes->get_genes()} ) ) 
+            { 
+                $aberration->set_first_tier(); 
+                $aberration->add_primary_gene($gene);
+            }
 
             # tier 2 flagging
-            if ( grep( /^$gene$/, @{$second_tier_genes->get_genes()} ) ) { $aberration->set_second_tier(); }
+            if ( grep( /^$gene$/, @{$second_tier_genes->get_genes()} ) ) 
+            { 
+                $aberration->set_second_tier(); 
+                $aberration->add_secondary_gene($gene);
+            }
         }
 
         # tier 3 flagging
@@ -292,71 +300,109 @@ sub filter_aberrations
 sub print_filtered
 {
     my $self = shift;
+    my $print_full = shift;
 
-    print "\nFirst-tier aberrations: CHD gene\n";
-    print "--------------------------------\n";
-    foreach my $aberration (@{$self->get_first_tier()})
+    $self->print_group("Aberration matches against primary gene list: CHD", "first_tier", $print_full);
+    $self->print_group("Aberration matches against secondary gene list: CVD", "second_tier", $print_full);
+    $self->print_group("Aberration size > 1 MB and not LOH", "third_tier", $print_full);
+    $self->print_group("Aberration size > 5 MB and LOH", "fourth_tier", $print_full);
+    $self->print_group("Unflagged aberrations", "unflagged", $print_full);
+
+    print "\n";
+}
+
+sub print_group
+{
+    my $self = shift;
+    my $title = shift;
+    my $group = shift;
+    my $print_full = shift;
+
+    my $index = 0;
+
+    print "\n";
+    print $title."\n";
+    print "-" x length($title)."\n";
+
+    foreach my $aberration (@{$self->{$group}})
     {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
-        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
-        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
-        print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
-        foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
+        print $aberration->get_event()."\t";
+        print $aberration->get_chromosome()."\t";
+        
+        if ($print_full)
+        {
+            foreach my $cytoband (@{$aberration->get_cytobands()}) 
+            { 
+                print $cytoband;
+                if ($index >= scalar(@{$aberration->get_cytobands()}) - 1) { last; } 
+                
+                $index++;
+                print ", "; 
+            }
+        }
+
+        else 
+        {
+            print ${$aberration->get_cytobands()}[0];
+
+            if (scalar(@{$aberration->get_cytobands()}) > 1)
+            {
+                print "-".${$aberration->get_cytobands()}[scalar(@{$aberration->get_cytobands()}) - 1];
+            }
+        }
+        
+        print "\t";
+        print $aberration->get_size()."\t";
+        
+        $index = 0;
+        foreach my $gene (@{$aberration->get_primary_genes()}) 
+        { 
+            print $gene;
+            if ($index >= scalar(@{$aberration->get_primary_genes()}) - 1) { last; } 
+            $index++;
+            print ", "; 
+        }
+
+        print "\t";
+
+        $index = 0;
+        foreach my $gene (@{$aberration->get_secondary_genes()}) 
+        { 
+            print $gene;
+            if ($index >= scalar(@{$aberration->get_secondary_genes()}) - 1) { last; } 
+            $index++;
+            print ", "; 
+        }
+
+        print "\t";
+
+        print $aberration->get_third_tier()."\t";
+        print $aberration->get_fourth_tier()."\t";
+        # print $aberration->get_polymorphic()."\t";
+
+        $index = 0;
+        foreach my $classification (@{$aberration->get_region_classifications})
+        {
+            print $classification;
+            if ($index >= scalar(@{$aberration->get_region_classifications()}) - 1) { last; } 
+            $index++;
+            print ", "; 
+        }
+        
+        $index = 0;
+        if ($print_full)
+        {
+            foreach my $gene (@{$aberration->get_genes()}) 
+            { 
+                print $gene;
+                if ($index >= scalar(@{$aberration->get_genes()}) - 1) { last; } 
+                $index++;
+                print ", "; 
+            }
+        }
+
         print "\n";
     }
-    print "\n";
-
-    print "Second-tier aberrations: CVD gene\n";
-    print "---------------------------------\n";
-    foreach my $aberration (@{$self->get_second_tier()})
-    {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
-        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
-        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
-        print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
-        foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
-        print "\n";
-    }
-    print "\n";
-
-    print "Third-tier aberrations: Size > 1 MB and not LOH\n";
-    print "-----------------------------------------------\n";
-    foreach my $aberration (@{$self->get_third_tier()})
-    {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
-        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
-        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
-        print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
-        foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
-        print "\n";
-    }
-    print "\n";
-
-    print "Fourth-tier aberrations: Size > 5 MB and LOH\n";
-    print "--------------------------------------------\n";
-    foreach my $aberration (@{$self->get_fourth_tier()})
-    {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
-        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
-        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
-        print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
-        foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
-        print "\n";
-    }
-    print "\n";
-
-    print "Unflagged aberrations\n";
-    print "---------------------\n";
-    foreach my $aberration (@{$self->get_unflagged()})
-    {
-        print $aberration->get_event()."\t".$aberration->get_chromosome()."\t";
-        foreach my $cytoband (@{$aberration->get_cytobands()}) { print $cytoband.","; }
-        print "\t".$aberration->get_size()."\t".$aberration->get_polymorphic()."\t";
-        print $aberration->get_first_tier()."\t".$aberration->get_second_tier()."\t".$aberration->get_third_tier()."\t".$aberration->get_fourth_tier()."\t";
-        foreach my $gene (@{$aberration->get_genes()}) { print $gene.","; }
-        print "\n";
-    }
-    print "\n";
 }
 
 1;

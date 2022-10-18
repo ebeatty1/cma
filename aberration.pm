@@ -48,6 +48,10 @@ sub new
     my $fourth_tier = '';
     my $polymorphic = '';
 
+	my @primary_genes;
+	my @secondary_genes;
+	my @region_classifications;
+
     my $self = bless {
         type => $type,                                      # 0  
         chromosome => $chromosome,                          # 1
@@ -85,7 +89,10 @@ sub new
         second_tier => $second_tier,                        # 33    # Filter flag
         third_tier => $third_tier,                          # 34    # Filter flag
         fourth_tier => $fourth_tier,                        # 35    # Filter flag
-        polymorphic => $polymorphic                         # 36    # Polymorphic region flag
+        polymorphic => $polymorphic,                        # 36    # Polymorphic region flag
+		primary_genes => \@primary_genes,					# 37	# Array of genes flagged by the primary list
+		secondary_genes => \@secondary_genes,				# 38	# Array of genes flagged by the secondary list
+		region_classifications => \@region_classifications	# 39	# Array of cytoband classifications
     }, $class;
 
     return $self;
@@ -119,6 +126,19 @@ sub process_aberration
 				{
 					my $cytobands = $cytomap->get_cytoband_range($self->get_chromosome(), $aberration[$pos]);
 					$self->set_cytobands($cytobands); 
+
+					foreach my $cytoband (@$cytobands)
+					{
+						my $classifications = $cytomap->{$self->get_chromosome()}->get_cytoband_by_id($cytoband)->get_classifications();
+						if (scalar(@$classifications) > 0)
+						{
+							foreach my $classification (@$classifications)
+							{
+								# add classification to the classification array if not already present
+    							if ( !( grep( /^$classification$/, @{$self->get_region_classifications()} ) ) ) { push(@{$self->get_region_classifications()}, $classification); }
+							}
+						}
+					}
 				}
 				else { die "Chromosome column must be ordered before the cytoband column\n"; }
 			}
@@ -170,6 +190,19 @@ sub process_aberration
 				{
 					my $cytobands = $cytomap->get_cytoband_range($self->get_chromosome(), $aberration[$pos]);
 					$self->set_cytobands($cytobands); 
+
+					foreach my $cytoband (@$cytobands)
+					{
+						my $classifications = $cytomap->{$self->get_chromosome()}->get_cytoband_by_id($cytoband)->get_classifications();
+						if (scalar(@$classifications) > 0)
+						{
+							foreach my $classification (@$classifications)
+							{
+								# add classification to the classification array if not already present
+    							if ( !( grep( /^$classification$/, @{$self->get_region_classifications()} ) ) ) { push(@{$self->get_region_classifications()}, $classification); }
+							}
+						}
+					}
 				}
 				else { die "Chromosome column must be ordered before the cytoband column\n"; }
 			}
@@ -432,6 +465,24 @@ sub get_polymorphic
 	return $self->{polymorphic};
 }
 
+sub get_primary_genes
+{
+	my $self = shift;
+	$self->{primary_genes}
+}
+
+sub get_secondary_genes
+{
+	my $self = shift;
+	$self->{secondary_genes}
+}
+
+sub get_region_classifications
+{
+	my $self = shift;
+	$self->{region_classifications}
+}
+
 # setter
 
 sub set_type
@@ -661,25 +712,25 @@ sub set_notes
 sub set_first_tier
 {
     my $self = shift;
-    $self->{first_tier} = "Filter 1";
+    $self->{first_tier} = "CHD gene(s)";
 }
 
 sub set_second_tier
 {
     my $self = shift;
-    $self->{second_tier} = "Filter 2";
+    $self->{second_tier} = "CVD gene(s)";
 }
 
 sub set_third_tier
 {
     my $self = shift;
-    $self->{third_tier} = "Filter 3";
+    $self->{third_tier} = "CNV > 1 MB";
 }
 
 sub set_fourth_tier
 {
     my $self = shift;
-    $self->{fourth_tier} = "Filter 4";
+    $self->{fourth_tier} = "LOH > 5 MB";
 }
 
 sub set_polymorphic
@@ -688,5 +739,28 @@ sub set_polymorphic
     $self->{polymorphic} = 'Known polymorphic region';
 }
 
+sub add_primary_gene
+{
+	my $self = shift;
+	my $gene = shift;
+
+	push(@{$self->get_primary_genes()}, $gene);
+}
+
+sub add_secondary_gene
+{
+	my $self = shift;
+	my $gene = shift;
+	
+	push(@{$self->get_secondary_genes()}, $gene);
+}
+
+sub add_region_classification
+{
+	my $self = shift;
+	my $classification = shift;
+	
+	push(@{$self->get_region_classifications()}, $classification);
+}
 
 1;
